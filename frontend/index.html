@@ -1,0 +1,2255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LTX — The world model</title>
+
+  <!-- Google Fonts: Manrope -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       GLOBAL CSS & VARIABLES
+       ========================================================================== */
+    :root {
+      --retake-ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --retake-slow-ease: cubic-bezier(0.65, 0, 0.35, 1);
+      --color-white: #ffffff;
+      --color-black: #000000;
+      --glass-bg: rgba(255, 255, 255, 0.08);
+      --glass-border: rgba(255, 255, 255, 0.18);
+      --glass-capsule-bg: rgba(255, 255, 255, 0.22);
+      --glass-capsule-border: rgba(255, 255, 255, 0.35);
+      --glass-shadow: 0 20px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      --capsule-x: 0px;
+      --capsule-w: 0px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    ::selection {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--color-black);
+      color: var(--color-white);
+      font-family: 'Manrope', system-ui, -apple-system, sans-serif;
+    }
+
+    button {
+      font-family: inherit;
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      outline: none;
+    }
+
+    button:focus-visible, a:focus-visible {
+      outline: 2px solid #fff;
+      outline-offset: 3px;
+    }
+
+    /* ==========================================================================
+       STAGE & DOM ORDER
+       Z-indexes:
+       - Media: 0
+       - Hero: 10
+       - Controller: 20
+       - Header: 30
+       - Status / Notice: 40
+       ========================================================================== */
+    .stage {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      align-items: center;
+      background-color: #000;
+    }
+
+    /* ==========================================================================
+       1. MEDIA: VIDEO ELEMENTS (Z-INDEX: 0)
+       ========================================================================== */
+    .media-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      user-select: none;
+      background: #000;
+    }
+
+    .media-container video {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .media-container video.is-visible {
+      opacity: 1;
+      visibility: visible;
+      z-index: 2;
+    }
+
+    .media-container video.is-visible.is-base {
+      z-index: 1;
+    }
+
+    /* ==========================================================================
+       4. HEADER (Z-INDEX: 30)
+       ========================================================================== */
+    .header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      z-index: 30;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      padding: calc(58px + env(safe-area-inset-top, 0px)) 40px 40px;
+      pointer-events: auto;
+    }
+
+    .header-brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-decoration: none;
+      color: #fff;
+    }
+
+    .header-logo-svg {
+      width: 75px;
+      height: 32px;
+      fill: #fff;
+      display: block;
+    }
+
+    .header-tagline {
+      display: flex;
+      flex-direction: column;
+      font-size: 13px;
+      line-height: 1.35;
+      font-weight: 500;
+      letter-spacing: -0.01em;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .header-tagline .sub {
+      color: rgba(255, 255, 255, 0.55);
+      font-size: 12px;
+    }
+
+    .header-cta-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 152px;
+      height: 38px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      text-decoration: none;
+      transition: background 0.3s var(--retake-ease), border-color 0.3s var(--retake-ease);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .header-cta-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.45);
+    }
+
+    /* ==========================================================================
+       2. HERO (Z-INDEX: 10)
+       ========================================================================== */
+    .hero {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      max-width: 960px;
+      padding: 0 40px;
+      text-align: center;
+      z-index: 10;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .hero-title {
+      font-size: clamp(48px, 7vw, 92px);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -0.035em;
+      margin-bottom: 24px;
+      display: flex;
+      justify-content: center;
+      gap: 0.28em;
+    }
+
+    .hero-title span {
+      display: inline-block;
+      transition: transform 0.8s var(--retake-ease), opacity 0.8s var(--retake-ease), filter 0.8s var(--retake-ease);
+      opacity: 1;
+      filter: blur(0px);
+      transform: translateY(0);
+    }
+
+    .hero-title span:nth-child(1) { transition-delay: 0.0s; }
+    .hero-title span:nth-child(2) { transition-delay: 0.08s; }
+    .hero-title span:nth-child(3) { transition-delay: 0.16s; }
+
+    .hero.is-hidden .hero-title span {
+      opacity: 0;
+      filter: blur(14px);
+      transform: translateY(-24px);
+    }
+
+    .hero-description {
+      font-size: clamp(15px, 1.8vw, 19px);
+      font-weight: 400;
+      line-height: 1.5;
+      letter-spacing: -0.015em;
+      color: rgba(255, 255, 255, 0.82);
+      max-width: 680px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+      transition: opacity 0.6s var(--retake-ease);
+    }
+
+    /* ==========================================================================
+       3. CONTROLLER & GLASS MATERIAL (Z-INDEX: 20)
+       ========================================================================== */
+    .controller-wrapper {
+      position: relative;
+      z-index: 20;
+      margin-bottom: calc(48px + env(safe-area-inset-bottom, 0px));
+      pointer-events: auto;
+    }
+
+    .controller {
+      position: relative;
+      display: grid;
+      grid-template-columns: auto auto auto auto auto;
+      align-items: center;
+      background: var(--glass-bg);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid var(--glass-border);
+      border-radius: 999px;
+      box-shadow: var(--glass-shadow);
+      padding: 6px;
+      height: 72px;
+      min-width: 620px;
+      transition: min-width 0.65s var(--retake-ease), width 0.65s var(--retake-ease), height 0.65s var(--retake-ease), border-color 0.5s ease, background-color 0.5s ease;
+      overflow: hidden;
+    }
+
+    /* Rear track collapse & material fade */
+    .controller.is-selected {
+      min-width: 200px;
+      width: 200px;
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(255, 255, 255, 0.35);
+      grid-template-columns: 1fr;
+      justify-content: center;
+    }
+
+    /* The sliding hover capsule */
+    .controller-capsule {
+      position: absolute;
+      top: 6px;
+      left: 0;
+      height: calc(100% - 12px);
+      width: var(--capsule-w);
+      transform: translateX(var(--capsule-x));
+      background: var(--glass-capsule-bg);
+      border: 1px solid var(--glass-capsule-border);
+      border-radius: 999px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+      transition: transform 0.4s var(--retake-ease), width 0.4s var(--retake-ease), opacity 0.35s ease;
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+    }
+
+    .controller-capsule.is-active {
+      opacity: 1;
+    }
+
+    .controller.is-selected .controller-capsule {
+      opacity: 0;
+      transform: scale(0.95);
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    /* Controller Columns */
+    .controller-state-label {
+      padding: 0 24px 0 20px;
+      font-size: 14px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.65);
+      white-space: nowrap;
+      user-select: none;
+      z-index: 2;
+      transition: opacity 0.3s var(--retake-ease), transform 0.3s var(--retake-ease);
+    }
+
+    .controller-btn {
+      position: relative;
+      height: 100%;
+      padding: 0 24px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: rgba(255, 255, 255, 0.9);
+      border-radius: 999px;
+      white-space: nowrap;
+      z-index: 2;
+      transition: color 0.3s ease, opacity 0.4s var(--retake-ease), transform 0.4s var(--retake-ease);
+      min-height: 44px;
+    }
+
+    .controller-btn:hover {
+      color: #fff;
+    }
+
+    .controller-btn:disabled {
+      cursor: default;
+    }
+
+    /* When a branch is selected: Hide state label and non-selected buttons */
+    .controller.is-selected .controller-state-label {
+      display: none;
+      opacity: 0;
+    }
+
+    .controller.is-selected .controller-btn:not(.is-chosen) {
+      display: none;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Reset button in selected state */
+    .controller.is-selected .controller-btn.is-chosen {
+      width: 100%;
+      padding: 0;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+      text-decoration-thickness: 1px;
+      z-index: 5;
+    }
+
+    /* ==========================================================================
+       5. NOTICE / STATUS (Z-INDEX: 40)
+       ========================================================================== */
+    .status-notice {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 40;
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+      color: rgba(255, 255, 255, 0.5);
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .status-notice.is-visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .status-notice button {
+      color: #fff;
+      text-decoration: underline;
+      margin-left: 8px;
+    }
+
+    .visually-hidden {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* ==========================================================================
+       6. CULTURAL DISCOVERY INTERFACE & GLASS DOCK (Z-INDEX: 25)
+       ========================================================================== */
+    .header-discovery-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 16px;
+      height: 38px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, 0.85);
+      font-size: 13px;
+      font-weight: 500;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      transition: background 0.25s ease, border-color 0.25s ease, color 0.25s ease, transform 0.2s ease;
+      cursor: pointer;
+    }
+
+    .header-discovery-btn:hover {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: rgba(255, 255, 255, 0.32);
+      color: #fff;
+    }
+
+    .header-discovery-btn svg {
+      width: 15px;
+      height: 15px;
+      opacity: 0.85;
+    }
+
+    .discovery-dock {
+      width: 100%;
+      max-width: 660px;
+      margin-top: 24px;
+      pointer-events: auto;
+      z-index: 15;
+    }
+
+    .discovery-search-bar {
+      background: rgba(20, 20, 24, 0.65);
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+      padding: 6px 6px 8px 12px;
+      transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .discovery-search-bar:focus-within {
+      border-color: rgba(255, 255, 255, 0.35);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.15);
+    }
+
+    .discovery-input-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .discovery-search-icon {
+      width: 18px;
+      height: 18px;
+      color: rgba(255, 255, 255, 0.55);
+      flex-shrink: 0;
+    }
+
+    .discovery-input {
+      flex: 1;
+      height: 42px;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .discovery-input::placeholder {
+      color: rgba(255, 255, 255, 0.42);
+      font-weight: 400;
+    }
+
+    .discovery-submit-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 40px;
+      padding: 0 18px;
+      background: rgba(255, 255, 255, 0.92);
+      border: none;
+      border-radius: 999px;
+      color: #0b0c10;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      transition: background 0.2s ease, transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .discovery-submit-btn:hover {
+      background: #fff;
+      transform: translateY(-1px);
+    }
+
+    .discovery-submit-btn:active {
+      transform: translateY(0);
+    }
+
+    .discovery-arrow-icon {
+      width: 14px;
+      height: 14px;
+    }
+
+    .discovery-prompts {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+      padding-left: 28px;
+    }
+
+    .discovery-prompts-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: rgba(255, 255, 255, 0.45);
+      margin-right: 2px;
+    }
+
+    .discovery-chip {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, 0.75);
+      font-size: 12px;
+      padding: 3px 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .discovery-chip:hover {
+      background: rgba(255, 255, 255, 0.14);
+      border-color: rgba(255, 255, 255, 0.22);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+
+    /* ==========================================================================
+       7. CULTURAL DISCOVERY RESULTS OVERLAY (Z-INDEX: 45)
+       ========================================================================== */
+    .discovery-results-panel {
+      position: fixed;
+      inset: 0;
+      z-index: 45;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      opacity: 1;
+      visibility: visible;
+      transition: opacity 0.32s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.32s;
+    }
+
+    .discovery-results-panel.is-hidden {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .discovery-panel-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.68);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .discovery-panel-content {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 860px;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+      background: rgba(18, 19, 24, 0.88);
+      backdrop-filter: blur(36px) saturate(180%);
+      -webkit-backdrop-filter: blur(36px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 28px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
+      overflow: hidden;
+      transform: scale(1);
+      transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .discovery-results-panel.is-hidden .discovery-panel-content {
+      transform: scale(0.96);
+    }
+
+    .discovery-panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      padding: 24px 28px 18px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .discovery-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      margin-bottom: 8px;
+    }
+
+    .discovery-badge.status-ok {
+      background: rgba(52, 211, 153, 0.12);
+      color: #6ee7b7;
+      border-color: rgba(52, 211, 153, 0.3);
+    }
+
+    .discovery-badge.status-partial {
+      background: rgba(251, 191, 36, 0.12);
+      color: #fde047;
+      border-color: rgba(251, 191, 36, 0.3);
+    }
+
+    .discovery-badge.status-empty {
+      background: rgba(148, 163, 184, 0.12);
+      color: #cbd5e1;
+      border-color: rgba(148, 163, 184, 0.25);
+    }
+
+    .discovery-badge.status-error {
+      background: rgba(248, 113, 113, 0.12);
+      color: #fca5a5;
+      border-color: rgba(248, 113, 113, 0.3);
+    }
+
+    .discovery-panel-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+      margin: 0;
+    }
+
+    .discovery-panel-intent {
+      font-size: 13px;
+      font-style: italic;
+      color: rgba(255, 255, 255, 0.55);
+      margin-top: 4px;
+      max-width: 680px;
+    }
+
+    .discovery-close-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      color: rgba(255, 255, 255, 0.7);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .discovery-close-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: #fff;
+      transform: scale(1.05);
+    }
+
+    .discovery-panel-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* States (Loading, Error, Empty) */
+    .discovery-state {
+      text-align: center;
+      padding: 48px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .discovery-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.12);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: disc-spin 0.8s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes disc-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .state-icon {
+      font-size: 36px;
+      margin-bottom: 16px;
+    }
+
+    .state-title {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .state-desc {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      max-width: 480px;
+      line-height: 1.5;
+    }
+
+    .discovery-retry-btn {
+      margin-top: 16px;
+      padding: 8px 20px;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .discovery-retry-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .skeleton-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      width: 100%;
+      max-width: 600px;
+      margin-top: 24px;
+    }
+
+    .skeleton-card {
+      height: 110px;
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      animation: disc-pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes disc-pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
+
+    /* Curator Synthesis & Warning Banners */
+    .curator-synthesis-card {
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(168, 85, 247, 0.1));
+      border: 1px solid rgba(168, 85, 247, 0.3);
+      border-radius: 18px;
+      padding: 16px 20px;
+    }
+
+    .curator-badge {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #c084fc;
+      margin-bottom: 6px;
+    }
+
+    .curator-text {
+      font-size: 13.5px;
+      line-height: 1.55;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .discovery-warning-banner {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      background: rgba(251, 191, 36, 0.08);
+      border: 1px solid rgba(251, 191, 36, 0.2);
+      border-radius: 14px;
+      padding: 12px 16px;
+      font-size: 12.5px;
+      line-height: 1.45;
+      color: #fde047;
+    }
+
+    /* Sections & Cards */
+    .discovery-section {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .section-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .section-badge {
+      font-size: 11px;
+      font-weight: 500;
+      padding: 2px 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    .section-empty-notice {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px dashed rgba(255, 255, 255, 0.12);
+      border-radius: 14px;
+      padding: 16px;
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.5);
+      line-height: 1.45;
+    }
+
+    .discovery-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+
+    .discovery-card {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+    }
+
+    .discovery-card:hover {
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.18);
+      transform: translateY(-2px);
+    }
+
+    .card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #fff;
+      line-height: 1.3;
+    }
+
+    .card-type-tag {
+      font-size: 10.5px;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 2px 7px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      color: rgba(255, 255, 255, 0.7);
+      flex-shrink: 0;
+    }
+
+    .card-location {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.65);
+    }
+
+    .card-desc {
+      font-size: 12.5px;
+      color: rgba(255, 255, 255, 0.68);
+      line-height: 1.45;
+    }
+
+    .card-reason {
+      font-size: 12px;
+      color: rgba(147, 197, 253, 0.9);
+      background: rgba(59, 130, 246, 0.08);
+      border-left: 2px solid #3b82f6;
+      padding: 6px 10px;
+      border-radius: 0 8px 8px 0;
+      line-height: 1.4;
+    }
+
+    .card-foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 4px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 11px;
+    }
+
+    .affinity-pill {
+      font-weight: 600;
+      color: #34d399;
+      background: rgba(52, 211, 153, 0.1);
+      padding: 2px 7px;
+      border-radius: 999px;
+    }
+
+    .provenance-tag {
+      color: rgba(255, 255, 255, 0.4);
+      font-family: monospace;
+    }
+
+    /* Cross-Domain Connections */
+    .connections-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .connection-item {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 12.5px;
+    }
+
+    .conn-entities {
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .conn-basis {
+      color: rgba(255, 255, 255, 0.55);
+      line-height: 1.4;
+    }
+
+    /* Diagnostics & Excluded Items */
+    .diagnostics-disclosure {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .diagnostics-summary {
+      padding: 12px 16px;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.7);
+      cursor: pointer;
+      user-select: none;
+      transition: color 0.2s ease;
+    }
+
+    .diagnostics-summary:hover {
+      color: #fff;
+    }
+
+    .diagnostics-content {
+      padding: 0 16px 16px;
+    }
+
+    .diagnostics-note {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.55);
+      line-height: 1.45;
+      margin-bottom: 12px;
+    }
+
+    .excluded-table-wrapper {
+      overflow-x: auto;
+    }
+
+    .excluded-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 11.5px;
+      text-align: left;
+    }
+
+    .excluded-table th {
+      padding: 8px 10px;
+      color: rgba(255, 255, 255, 0.45);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .excluded-table td {
+      padding: 8px 10px;
+      color: rgba(255, 255, 255, 0.7);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      line-height: 1.4;
+    }
+
+    .discovery-panel-footer {
+      padding: 14px 28px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .discovery-disclaimer {
+      font-size: 11.5px;
+      line-height: 1.45;
+      color: rgba(255, 255, 255, 0.45);
+      margin: 0;
+    }
+
+    /* ==========================================================================
+       RESPONSIVE BREAKPOINTS
+       ========================================================================== */
+    @media (max-width: 900px) {
+      .header {
+        padding: calc(36px + env(safe-area-inset-top, 0px)) 24px 24px;
+      }
+      .hero {
+        padding: 0 24px;
+      }
+      .controller {
+        min-width: 540px;
+        height: 64px;
+        padding: 4px;
+      }
+      .controller-state-label {
+        padding: 0 16px;
+        font-size: 13px;
+      }
+      .controller-btn {
+        padding: 0 16px;
+        font-size: 13px;
+      }
+      .controller.is-selected {
+        min-width: 180px;
+        width: 180px;
+        height: 64px;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .header {
+        padding: calc(24px + env(safe-area-inset-top, 0px)) 20px 20px;
+      }
+      .header-tagline {
+        display: none;
+      }
+      .header-cta-btn {
+        width: 110px;
+        height: 34px;
+        font-size: 12px;
+      }
+      .hero {
+        top: 42%;
+        padding: 0 20px;
+      }
+      .hero-title {
+        font-size: clamp(38px, 11vw, 56px);
+      }
+      .hero-description {
+        font-size: 14px;
+      }
+
+      /* Mobile 2-column controller */
+      .controller-wrapper {
+        width: calc(100% - 32px);
+        max-width: 380px;
+        margin-bottom: calc(32px + env(safe-area-inset-bottom, 0px));
+      }
+
+      .controller {
+        min-width: unset;
+        width: 100%;
+        height: auto;
+        border-radius: 28px;
+        padding: 10px;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+
+      .controller-capsule {
+        display: none; /* Disable sliding hover capsule on mobile */
+      }
+
+      .controller-state-label {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 4px 0 8px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 4px;
+      }
+
+      .controller-btn {
+        height: 44px;
+        padding: 0 8px;
+        font-size: 13px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+
+      .controller-btn:active {
+        background: rgba(255, 255, 255, 0.18);
+      }
+
+      .controller.is-selected {
+        min-width: 180px;
+        width: 180px;
+        height: 64px;
+        border-radius: 999px;
+        margin: 0 auto;
+        grid-template-columns: 1fr;
+        padding: 6px;
+      }
+
+      .discovery-dock {
+        max-width: 100%;
+        margin-top: 14px;
+      }
+
+      .discovery-prompts {
+        padding-left: 0;
+        justify-content: center;
+      }
+
+      .discovery-results-panel {
+        padding: 0;
+        align-items: flex-end;
+      }
+
+      .discovery-panel-content {
+        max-height: 85vh;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+
+      .discovery-cards-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .header-discovery-btn span {
+        display: none;
+      }
+
+      .header-discovery-btn {
+        padding: 0 10px;
+        height: 34px;
+      }
+    }
+
+    @media (max-height: 520px) {
+      .header {
+        padding: 16px 24px;
+      }
+      .hero-title {
+        font-size: 32px;
+        margin-bottom: 8px;
+      }
+      .hero-description {
+        display: none;
+      }
+      .controller-wrapper {
+        margin-bottom: 16px;
+      }
+      .controller {
+        height: 54px;
+      }
+      .controller.is-selected {
+        height: 54px;
+      }
+    }
+
+    /* ==========================================================================
+       REDUCED MOTION
+       ========================================================================== */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition-duration: 0.001s !important;
+        animation-duration: 0.001s !important;
+        filter: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage" id="stage" role="region" aria-label="Cinematic Experience">
+    
+    <!-- 1. EIGHT PERSISTENT VIDEO ELEMENTS (MEDIA CONTAINER) -->
+    <div class="media-container" id="mediaContainer">
+      <!-- Base Scene (video-1 frame 0) -->
+      <video id="v-clothing-fwd" muted playsinline preload="auto" aria-hidden="true"
+             src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-1.mp4"></video>
+      <video id="v-clothing-rev" muted playsinline preload="auto" aria-hidden="true"
+             src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-1-reverse.mp4"></video>
+
+      <video id="v-scene-fwd" muted playsinline preload="auto" aria-hidden="true"
+             src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-2.mp4"></video>
+      <video id="v-scene-rev" muted playsinline preload="auto" aria-hidden="true"
+             src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-2-reverse.mp4"></video>
+
+      <video id="v-lighting-fwd" muted playsinline preload="auto" aria-hidden="true"
+             src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-3.mp4"></video>
+      <video id="v-lighting-rev" muted playsinline preload="auto" aria-hidden="true"
+             src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-3-reverse.mp4"></video>
+
+      <video id="v-cast-fwd" muted playsinline preload="auto" aria-hidden="true"
+             src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-4.mp4"></video>
+      <video id="v-cast-rev" muted playsinline preload="auto" aria-hidden="true"
+             src="https://pub-86dc5b5484314368ac5436a674b0d919.r2.dev/designs/video-4-reverse.mp4"></video>
+    </div>
+
+    <!-- 2. HERO -->
+    <section class="hero" id="hero">
+      <h1 class="hero-title" aria-label="The world model">
+        <span>The</span>
+        <span>world</span>
+        <span>model</span>
+      </h1>
+      <p class="hero-description">
+        LTX builds open world models that give you full control, from production-grade video to systems that understand and operate in the physical world.
+      </p>
+
+      <!-- Cultural Discovery Search Dock -->
+      <div class="discovery-dock" id="discoveryDock">
+        <form class="discovery-search-bar" id="discoveryForm" role="search">
+          <div class="discovery-input-wrapper">
+            <svg class="discovery-search-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+              <circle cx="8.5" cy="8.5" r="5.5"></circle>
+              <path d="M12.5 12.5L17 17"></path>
+            </svg>
+            <input
+              type="text"
+              id="discoveryInput"
+              class="discovery-input"
+              placeholder="Describe a cultural vibe... (e.g. Lagos indie arts & good coffee)"
+              autocomplete="off"
+              aria-label="Cultural discovery query"
+              required
+            />
+            <button type="submit" id="discoverySubmitBtn" class="discovery-submit-btn" aria-label="Discover cultural affinities">
+              <span>Discover</span>
+              <svg class="discovery-arrow-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                <path d="M3 8h10M9 4l4 4-4 4"/>
+              </svg>
+            </button>
+          </div>
+          <div class="discovery-prompts" id="discoveryPrompts" aria-label="Suggested cultural discovery prompts">
+            <span class="discovery-prompts-label">Try:</span>
+            <button type="button" class="discovery-chip" data-intent="Weekend in Lagos with an artsy, design-focused, indie-music vibe and good coffee">Lagos Indie Arts &amp; Coffee</button>
+            <button type="button" class="discovery-chip" data-intent="Afternoon in London with contemporary art galleries and specialty espresso">London Galleries &amp; Espresso</button>
+            <button type="button" class="discovery-chip" data-intent="Tokyo creative district with minimal design, vinyl records and tea">Tokyo Vinyl &amp; Design</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 3. CONTROLLER -->
+    <nav class="controller-wrapper" aria-label="Scene controller">
+      <div class="controller" id="controller">
+        <div class="controller-capsule" id="controllerCapsule" aria-hidden="true"></div>
+
+        <div class="controller-state-label" id="stateLabel" aria-hidden="true">
+          Select state &rarr;
+        </div>
+
+        <button type="button" class="controller-btn" id="btn-scene" data-branch="scene">
+          Scene
+        </button>
+        <button type="button" class="controller-btn" id="btn-lighting" data-branch="lighting">
+          Lighting
+        </button>
+        <button type="button" class="controller-btn" id="btn-clothing" data-branch="clothing">
+          Clothing
+        </button>
+        <button type="button" class="controller-btn" id="btn-cast" data-branch="cast">
+          Cast
+        </button>
+      </div>
+    </nav>
+
+    <!-- 4. HEADER -->
+    <header class="header">
+      <a href="https://app.ltx.io/" class="header-brand" target="_blank" rel="noopener noreferrer" aria-label="LTX Home">
+        <!-- SVG LTX wordmark with viewBox="0 0 75 32" -->
+        <svg class="header-logo-svg" viewBox="0 0 75 32" aria-hidden="true">
+          <path d="M0 0h10v24h18v8H0V0zm34 8h-8V0h26v8h-8v24h-10V8zm25 0h-9L60 0h12l-7 13 8 19h-12l-4-10-3 6v4h-9V0h9v17l5-9z"/>
+        </svg>
+        <div class="header-tagline">
+          <span>LTX-2.5 is here</span>
+          <span class="sub">Smarter. Faster</span>
+        </div>
+      </a>
+
+      <button type="button" class="header-discovery-btn" id="headerDiscoveryBtn" aria-label="Open Cultural Discovery">
+        <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <circle cx="8.5" cy="8.5" r="5.5"></circle>
+          <path d="M12.5 12.5L17 17"></path>
+        </svg>
+        <span>Discover Culture</span>
+      </button>
+
+      <a href="https://app.ltx.io/" class="header-cta-btn" target="_blank" rel="noopener noreferrer">
+        Try now
+      </a>
+    </header>
+
+    <!-- 5. STATUS / NOTICE & ACCESSIBILITY LIVE REGION -->
+    <div class="status-notice" id="statusNotice" role="status" aria-live="polite">
+      <span id="statusNoticeText"></span>
+      <button type="button" id="statusNoticeRetry" style="display: none;">Retry</button>
+    </div>
+    <div class="visually-hidden" id="srLiveRegion" aria-live="polite"></div>
+
+    <!-- 6. CULTURAL DISCOVERY RESULTS DRAWER / MODAL -->
+    <aside class="discovery-results-panel is-hidden" id="discoveryResultsPanel" role="dialog" aria-modal="true" aria-labelledby="discoveryResultsTitle" aria-hidden="true">
+      <div class="discovery-panel-backdrop" id="discoveryPanelBackdrop"></div>
+      <div class="discovery-panel-content">
+        <!-- Panel Header -->
+        <div class="discovery-panel-header">
+          <div class="discovery-header-info">
+            <div class="discovery-badge" id="discoveryStatusBadge">Qloo Taste Graph</div>
+            <h2 class="discovery-panel-title" id="discoveryResultsTitle">Cultural Discovery</h2>
+            <p class="discovery-panel-intent" id="discoveryPanelIntent"></p>
+          </div>
+          <button type="button" class="discovery-close-btn" id="discoveryCloseBtn" aria-label="Close cultural discovery results">
+            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none" aria-hidden="true">
+              <path d="M18 6L6 18M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Panel Body (Scrollable dynamic states) -->
+        <div class="discovery-panel-body" id="discoveryPanelBody"></div>
+
+        <!-- Panel Footer -->
+        <div class="discovery-panel-footer">
+          <p class="discovery-disclaimer">
+            Cultural discovery powered by aggregate affinity and taste signals from Qloo. Cross-domain recommendations reflect shared cultural affinities and correlations, not real-time local opening hours, ticketing, or physical venue availability.
+          </p>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- ==========================================================================
+       ISOLATED BACKEND SERVICE LAYER (CulturePilot API Boundary)
+       ========================================================================== -->
+  <script>
+    /**
+     * CulturePilotAPI
+     * Clean service boundary for future backend endpoints (e.g. POST /api/culture).
+     * Keeps API keys, credentials, and Qloo calls completely isolated on the server.
+     */
+    const CulturePilotAPI = {
+      endpoint: '/api/culture',
+      
+      /**
+       * Send cultural intent to the backend.
+       * @param {Object} payload 
+       * @returns {Promise<Object>}
+       */
+      async query(payload) {
+        try {
+          const response = await fetch(this.endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          if (!response.ok) {
+            throw new Error('CulturePilot API error: ' + response.statusText);
+          }
+          return await response.json();
+        } catch (err) {
+          console.warn('[CulturePilotAPI] Backend unreachable or not yet configured:', err.message);
+          return { status: 'offline', message: err.message };
+        }
+      }
+    };
+    window.CulturePilotAPI = CulturePilotAPI;
+  </script>
+
+  <!-- ==========================================================================
+       CULTUREPILOT DISCOVERY UI CONTROLLER
+       ========================================================================== -->
+  <script>
+    (function () {
+      'use strict';
+      
+      const form = document.getElementById('discoveryForm');
+      const input = document.getElementById('discoveryInput');
+      const submitBtn = document.getElementById('discoverySubmitBtn');
+      const prompts = document.getElementById('discoveryPrompts');
+      const panel = document.getElementById('discoveryResultsPanel');
+      const backdrop = document.getElementById('discoveryPanelBackdrop');
+      const closeBtn = document.getElementById('discoveryCloseBtn');
+      const body = document.getElementById('discoveryPanelBody');
+      const intentLabel = document.getElementById('discoveryPanelIntent');
+      const statusBadge = document.getElementById('discoveryStatusBadge');
+      const headerBtn = document.getElementById('headerDiscoveryBtn');
+      const srLive = document.getElementById('srLiveRegion');
+
+      let lastActiveElement = null;
+
+      function openPanel() {
+        lastActiveElement = document.activeElement;
+        panel.classList.remove('is-hidden');
+        panel.setAttribute('aria-hidden', 'false');
+        if (closeBtn) closeBtn.focus();
+        document.addEventListener('keydown', onKeyDown);
+      }
+
+      function closePanel() {
+        panel.classList.add('is-hidden');
+        panel.setAttribute('aria-hidden', 'true');
+        document.removeEventListener('keydown', onKeyDown);
+        if (lastActiveElement && typeof lastActiveElement.focus === 'function') {
+          lastActiveElement.focus();
+        }
+      }
+
+      function onKeyDown(e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          closePanel();
+        }
+      }
+
+      function announce(text) {
+        if (srLive) srLive.textContent = text;
+      }
+
+      function setBadge(status) {
+        if (!statusBadge) return;
+        statusBadge.className = 'discovery-badge status-' + (status || 'default');
+        const labels = {
+          ok: 'Qloo Taste Graph • Verified Affinity',
+          partial: 'Partial Discovery • Sparse Catalog',
+          empty: 'No Matches • Transparent 0',
+          needs_input: 'Input Needed',
+          degraded: 'Degraded Mode',
+          error: 'Error'
+        };
+        statusBadge.textContent = labels[status] || 'Qloo Taste Graph';
+      }
+
+      function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function renderLoading(intent) {
+        setBadge('default');
+        if (intentLabel) intentLabel.textContent = `“${intent}”`;
+        body.innerHTML = `
+          <div class="discovery-state discovery-state-loading" role="status">
+            <div class="discovery-spinner" aria-hidden="true"></div>
+            <h3 class="state-title">Querying Qloo Cultural Affinity</h3>
+            <p class="state-desc">Mapping taste signals across Arts &amp; Design, Coffee, and Music...</p>
+            <div class="skeleton-grid">
+              <div class="skeleton-card"></div>
+              <div class="skeleton-card"></div>
+            </div>
+          </div>
+        `;
+        announce('Loading cultural discovery results for ' + intent);
+      }
+
+      function renderError(message, retryIntent) {
+        setBadge('error');
+        body.innerHTML = `
+          <div class="discovery-state discovery-state-error" role="alert">
+            <div class="state-icon">⚠️</div>
+            <h3 class="state-title">Discovery Query Error</h3>
+            <p class="state-desc">${escapeHtml(message || 'Unable to connect to culture discovery service.')}</p>
+            <button type="button" class="discovery-retry-btn" id="discoveryRetryBtn">Try Again</button>
+          </div>
+        `;
+        const retryBtn = document.getElementById('discoveryRetryBtn');
+        if (retryBtn) {
+          retryBtn.onclick = function () {
+            executeDiscovery(retryIntent);
+          };
+        }
+        announce('Discovery error: ' + message);
+      }
+
+      function renderNeedsInput(message) {
+        setBadge('needs_input');
+        body.innerHTML = `
+          <div class="discovery-state discovery-state-warning">
+            <div class="state-icon">🔍</div>
+            <h3 class="state-title">More Context Required</h3>
+            <p class="state-desc">${escapeHtml(message || 'Please specify a destination or cultural vibe (e.g. "Weekend in Lagos with artsy coffee and indie music").')}</p>
+          </div>
+        `;
+      }
+
+      function renderEmpty(data) {
+        setBadge('empty');
+        body.innerHTML = `
+          <div class="discovery-state discovery-state-empty">
+            <div class="state-icon">🏛️</div>
+            <h3 class="state-title">No Cataloged Matches</h3>
+            <p class="state-desc">
+              Qloo has no verified venues or entities matching this specific query in ${escapeHtml(data?.discovery_context?.location || 'this location')}.
+              CulturePilot honestly reports zero matches rather than inventing venues or substituting unrelated athletic or commercial facilities.
+            </p>
+          </div>
+        `;
+      }
+
+      function renderResults(data) {
+        setBadge(data.status);
+        if (intentLabel) intentLabel.textContent = `“${data.intent}”`;
+
+        const categories = data.categories || {};
+        const arts = categories.arts_and_design?.results || [];
+        const coffee = categories.coffee?.results || [];
+        const music = categories.music?.results || [];
+        const excluded = data.excluded || [];
+        const connections = data.connections || [];
+        const warnings = data.warnings || [];
+        const curatorSynthesis = data.discovery_context?.curator_synthesis;
+
+        let html = '';
+
+        // Curator Narrative (if present from AI Studio)
+        if (curatorSynthesis) {
+          html += `
+            <div class="curator-synthesis-card">
+              <div class="curator-badge">Curator Synthesis</div>
+              <p class="curator-text">${escapeHtml(curatorSynthesis)}</p>
+            </div>
+          `;
+        }
+
+        // Warnings / Transparency notices
+        if (warnings.length > 0) {
+          html += `
+            <div class="discovery-warning-banner" role="status">
+              <span class="warning-icon">ℹ️</span>
+              <div class="warning-text">${warnings.map(function (w) { return `<p>${escapeHtml(w)}</p>`; }).join('')}</div>
+            </div>
+          `;
+        }
+
+        // Helper to render section
+        function renderSection(title, icon, items, emptyNotice) {
+          let sHtml = `
+            <section class="discovery-section" aria-labelledby="section-${title.toLowerCase().replace(/[^a-z0-9]/g, '-')}">
+              <div class="section-header">
+                <h3 class="section-title" id="section-${title.toLowerCase().replace(/[^a-z0-9]/g, '-')}">
+                  <span class="section-icon">${icon}</span> ${title}
+                </h3>
+                <span class="section-badge">${items.length} ${items.length === 1 ? 'result' : 'results'}</span>
+              </div>
+          `;
+
+          if (items.length === 0) {
+            sHtml += `
+              <div class="section-empty-notice">
+                <p>${escapeHtml(emptyNotice)}</p>
+              </div>
+            `;
+          } else {
+            sHtml += `<div class="discovery-cards-grid">`;
+            for (const item of items) {
+              const affinityPct = typeof item.affinity === 'number' ? Math.round(item.affinity * 100) : null;
+              sHtml += `
+                <article class="discovery-card">
+                  <div class="card-head">
+                    <h4 class="card-name">${escapeHtml(item.name)}</h4>
+                    <span class="card-type-tag">${escapeHtml(item.type)}</span>
+                  </div>
+                  ${item.location ? `<div class="card-location">📍 ${escapeHtml(item.location)}</div>` : ''}
+                  ${item.description ? `<p class="card-desc">${escapeHtml(item.description)}</p>` : ''}
+                  ${item.reason ? `<div class="card-reason">💡 ${escapeHtml(item.reason)}</div>` : ''}
+                  <div class="card-foot">
+                    ${affinityPct !== null ? `<span class="affinity-pill" title="Aggregate taste co-occurrence in Qloo graph">Affinity: ${affinityPct}%</span>` : ''}
+                    <span class="provenance-tag" title="Verified source provenance">qloo:${escapeHtml(item.source?.workflow || 'recommend')}</span>
+                  </div>
+                </article>
+              `;
+            }
+            sHtml += `</div>`;
+          }
+          sHtml += `</section>`;
+          return sHtml;
+        }
+
+        html += renderSection('Arts & Design', '🎨', arts, 'No verified arts or gallery venues cataloged for this location in Qloo.');
+        html += renderSection('Coffee', '☕', coffee, 'No dedicated third-wave coffee roasteries cataloged for this destination. Transparently reporting 0 matches.');
+        html += renderSection('Music', '🎵', music, 'No destination-grounded artist affinities identified.');
+
+        // Cross-domain connections
+        if (connections.length > 0) {
+          html += `
+            <section class="discovery-section">
+              <div class="section-header">
+                <h3 class="section-title"><span class="section-icon">🔗</span> Cross-Domain Cultural Affinity</h3>
+                <span class="section-badge">${connections.length} links</span>
+              </div>
+              <div class="connections-list">
+                ${connections.slice(0, 4).map(function (c) {
+                  return `
+                    <div class="connection-item">
+                      <div class="conn-entities"><strong>${escapeHtml(c.source_entity)}</strong> ↔ <strong>${escapeHtml(c.target_entity)}</strong></div>
+                      <div class="conn-basis">${escapeHtml(c.basis)}</div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </section>
+          `;
+        }
+
+        // Transparency & Exclusion Diagnostics
+        if (excluded.length > 0) {
+          html += `
+            <details class="diagnostics-disclosure">
+              <summary class="diagnostics-summary">
+                Semantic Filtering Diagnostics (${excluded.length} non-relevant items excluded)
+              </summary>
+              <div class="diagnostics-content">
+                <p class="diagnostics-note">
+                  Qloo computes aggregate statistical affinities across all place types. The following entities were filtered out because they belong to non-target domains (e.g. sports facilities, churches, toll gates) and do not satisfy the requested cultural intent:
+                </p>
+                <div class="excluded-table-wrapper">
+                  <table class="excluded-table">
+                    <thead>
+                      <tr><th>Entity Name</th><th>Affinity</th><th>Reason</th></tr>
+                    </thead>
+                    <tbody>
+                      ${excluded.map(function (ex) {
+                        return `
+                          <tr>
+                            <td><strong>${escapeHtml(ex.name)}</strong></td>
+                            <td>${typeof ex.affinity === 'number' ? (ex.affinity * 100).toFixed(1) + '%' : 'N/A'}</td>
+                            <td>${escapeHtml(ex.reason)}</td>
+                          </tr>
+                        `;
+                      }).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </details>
+          `;
+        }
+
+        body.innerHTML = html;
+        announce(`Showing cultural discovery results. ${arts.length} arts, ${coffee.length} coffee, ${music.length} music.`);
+      }
+
+      async function executeDiscovery(intentText) {
+        if (!intentText || !intentText.trim()) return;
+        const queryStr = intentText.trim();
+        openPanel();
+        renderLoading(queryStr);
+
+        try {
+          const data = await window.CulturePilotAPI.query({ intent: queryStr });
+          if (!data || data.status === 'error' || data.status === 'offline') {
+            renderError(data?.message || 'Could not fetch cultural recommendations.', queryStr);
+          } else if (data.status === 'needs_input') {
+            renderNeedsInput(data.warnings?.[0] || 'Please provide more details in your request.');
+          } else if (data.status === 'empty' && (!data.results || data.results.length === 0)) {
+            renderEmpty(data);
+          } else {
+            renderResults(data);
+          }
+        } catch (err) {
+          renderError(err.message, queryStr);
+        }
+      }
+
+      // Event Listeners
+      if (form) {
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          executeDiscovery(input.value);
+        });
+      }
+
+      if (prompts) {
+        prompts.addEventListener('click', function (e) {
+          const btn = e.target.closest('.discovery-chip');
+          if (!btn) return;
+          const intent = btn.getAttribute('data-intent');
+          if (intent) {
+            input.value = intent;
+            executeDiscovery(intent);
+          }
+        });
+      }
+
+      if (closeBtn) closeBtn.addEventListener('click', closePanel);
+      if (backdrop) backdrop.addEventListener('click', closePanel);
+      if (headerBtn) {
+        headerBtn.addEventListener('click', function () {
+          if (input && input.value) {
+            executeDiscovery(input.value);
+          } else if (input) {
+            input.focus();
+          }
+        });
+      }
+
+      // Expose UI hook for automated tests
+      window.CulturePilotUI = {
+        open: openPanel,
+        close: closePanel,
+        executeDiscovery: executeDiscovery
+      };
+
+    })();
+  </script>
+
+  <!-- ==========================================================================
+       SEAM-SAFE PLAYBACK & STATE MACHINE CONTROLLER SCRIPT
+       ========================================================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      // --- Video Map Configuration ---
+      const VIDEO_MAP = {
+        clothing: {
+          forward: document.getElementById('v-clothing-fwd'),
+          reverse: document.getElementById('v-clothing-rev')
+        },
+        scene: {
+          forward: document.getElementById('v-scene-fwd'),
+          reverse: document.getElementById('v-scene-rev')
+        },
+        lighting: {
+          forward: document.getElementById('v-lighting-fwd'),
+          reverse: document.getElementById('v-lighting-rev')
+        },
+        cast: {
+          forward: document.getElementById('v-cast-fwd'),
+          reverse: document.getElementById('v-cast-rev')
+        }
+      };
+
+      const ALL_VIDEOS = [
+        VIDEO_MAP.clothing.forward, VIDEO_MAP.clothing.reverse,
+        VIDEO_MAP.scene.forward, VIDEO_MAP.scene.reverse,
+        VIDEO_MAP.lighting.forward, VIDEO_MAP.lighting.reverse,
+        VIDEO_MAP.cast.forward, VIDEO_MAP.cast.reverse
+      ];
+
+      // Terminal frame guard values (seconds before video.duration)
+      const GUARD_DEFAULT = 0.08;
+      const GUARD_SCENE_REV = 0.18;
+
+      const FIRST_FRAME_TIMEOUT_MS = 12000;
+
+      // --- DOM Elements ---
+      const controllerEl = document.getElementById('controller');
+      const capsuleEl = document.getElementById('controllerCapsule');
+      const stateLabelEl = document.getElementById('stateLabel');
+      const heroEl = document.getElementById('hero');
+      const statusNoticeEl = document.getElementById('statusNotice');
+      const statusNoticeText = document.getElementById('statusNoticeText');
+      const statusNoticeRetry = document.getElementById('statusNoticeRetry');
+      const srLiveRegion = document.getElementById('srLiveRegion');
+
+      const buttons = {
+        scene: document.getElementById('btn-scene'),
+        lighting: document.getElementById('btn-lighting'),
+        clothing: document.getElementById('btn-clothing'),
+        cast: document.getElementById('btn-cast')
+      };
+
+      // --- State Machine ---
+      // scene: 'base' | 'scene' | 'lighting' | 'clothing' | 'cast'
+      // playback: 'loading' | 'ready' | 'starting' | 'playing' | 'error'
+      // direction: 'forward' | 'reverse'
+      const state = {
+        scene: 'base',
+        playback: 'loading',
+        direction: 'forward',
+        activeBranch: null,
+        isLocked: true, // starts locked until base video ready
+        currentVisibleVideo: null,
+        transitionToken: 0,
+        lastFocusedButton: null
+      };
+
+      // Announce status to screen readers
+      function announce(text) {
+        if (srLiveRegion) srLiveRegion.textContent = text;
+      }
+
+      function showNotice(text, showRetry, onRetry) {
+        statusNoticeText.textContent = text;
+        if (showRetry && onRetry) {
+          statusNoticeRetry.style.display = 'inline-block';
+          statusNoticeRetry.onclick = onRetry;
+        } else {
+          statusNoticeRetry.style.display = 'none';
+          statusNoticeRetry.onclick = null;
+        }
+        statusNoticeEl.classList.add('is-visible');
+      }
+
+      function hideNotice() {
+        statusNoticeEl.classList.remove('is-visible');
+      }
+
+      // --- Controls Enable / Disable ---
+      function setControlsDisabled(disabled) {
+        Object.keys(buttons).forEach(function (k) {
+          buttons[k].disabled = disabled;
+        });
+      }
+
+      // --- Capsule Hover Geometry Alignment ---
+      function updateCapsule(targetBtn) {
+        if (!targetBtn || controllerEl.classList.contains('is-selected')) {
+          capsuleEl.classList.remove('is-active');
+          return;
+        }
+        const ctrlRect = controllerEl.getBoundingClientRect();
+        const btnRect = targetBtn.getBoundingClientRect();
+        const x = btnRect.left - ctrlRect.left;
+        const w = btnRect.width;
+
+        controllerEl.style.setProperty('--capsule-x', x + 'px');
+        controllerEl.style.setProperty('--capsule-w', w + 'px');
+        capsuleEl.classList.add('is-active');
+      }
+
+      function initCapsuleEvents() {
+        Object.keys(buttons).forEach(function (k) {
+          const btn = buttons[k];
+          btn.addEventListener('pointerenter', function () {
+            if (!state.isLocked && state.scene === 'base') {
+              updateCapsule(btn);
+            }
+          });
+          btn.addEventListener('focus', function () {
+            if (!state.isLocked && state.scene === 'base') {
+              updateCapsule(btn);
+            }
+          });
+        });
+
+        controllerEl.addEventListener('pointerleave', function () {
+          capsuleEl.classList.remove('is-active');
+        });
+      }
+
+      // --- Seam-Safe Video Preparation & First Frame Detection ---
+      function waitForSeek(video) {
+        return new Promise(function (resolve) {
+          if (!video.seeking) {
+            resolve();
+            return;
+          }
+          let timer = setTimeout(function () {
+            video.removeEventListener('seeked', onSeeked);
+            resolve();
+          }, 300);
+          function onSeeked() {
+            clearTimeout(timer);
+            video.removeEventListener('seeked', onSeeked);
+            resolve();
+          }
+          video.addEventListener('seeked', onSeeked);
+        });
+      }
+
+      function waitForFirstFrame(video, token) {
+        return new Promise(function (resolve, reject) {
+          let timerId = null;
+          let rVFCId = null;
+          let rAF1 = null;
+          let rAF2 = null;
+          let cleaned = false;
+
+          function cleanup() {
+            if (cleaned) return;
+            cleaned = true;
+            if (timerId) clearTimeout(timerId);
+            if (rVFCId && video.cancelVideoFrameCallback) {
+              video.cancelVideoFrameCallback(rVFCId);
+            }
+            if (rAF1) cancelAnimationFrame(rAF1);
+            if (rAF2) cancelAnimationFrame(rAF2);
+            video.removeEventListener('playing', onPlaying);
+          }
+
+          // Timeout check (paused when hidden)
+          let startTime = Date.now();
+          function armTimer(remainingMs) {
+            timerId = setTimeout(function () {
+              if (document.hidden) {
+                // Pause timeout while hidden
+                return;
+              }
+              cleanup();
+              reject(new Error('First frame timeout: ' + remainingMs + 'ms'));
+            }, remainingMs);
+          }
+
+          armTimer(FIRST_FRAME_TIMEOUT_MS);
+
+          function onDecodedFrame() {
+            if (token !== state.transitionToken) {
+              cleanup();
+              return; // Stale token
+            }
+            cleanup();
+            resolve();
+          }
+
+          if ('requestVideoFrameCallback' in video) {
+            rVFCId = video.requestVideoFrameCallback(function () {
+              onDecodedFrame();
+            });
+          }
+
+          function onPlaying() {
+            // Double rAF fallback
+            rAF1 = requestAnimationFrame(function () {
+              rAF2 = requestAnimationFrame(function () {
+                onDecodedFrame();
+              });
+            });
+          }
+
+          video.addEventListener('playing', onPlaying, { once: true });
+        });
+      }
+
+      // --- Monitor Terminal Frame ---
+      function monitorTerminalFrame(video, branch, direction, token, onTerminal) {
+        let guard = GUARD_DEFAULT;
+        if (branch === 'scene' && direction === 'reverse') {
+          guard = GUARD_SCENE_REV;
+        }
+
+        let animFrameId = null;
+        let endedHandled = false;
+
+        function checkTime() {
+          if (token !== state.transitionToken) return;
+
+          const duration = video.duration;
+          if (duration > 0 && (duration - video.currentTime) <= guard) {
+            video.pause();
+            onTerminal();
+            return;
+          }
+
+          if (!video.paused && !video.ended) {
+            animFrameId = requestAnimationFrame(checkTime);
+          }
+        }
+
+        function onEnded() {
+          if (endedHandled || token !== state.transitionToken) return;
+          endedHandled = true;
+          if (animFrameId) cancelAnimationFrame(animFrameId);
+          video.pause();
+          onTerminal();
+        }
+
+        video.addEventListener('ended', onEnded, { once: true });
+        animFrameId = requestAnimationFrame(checkTime);
+      }
+
+      // --- Transition Execution: Forward & Reverse ---
+      async function executeTransition(branch, direction) {
+        // 1. Acquire playback lock synchronously
+        if (state.isLocked) return;
+        state.isLocked = true;
+        setControlsDisabled(true);
+
+        const currentToken = ++state.transitionToken;
+        state.direction = direction;
+        state.playback = 'starting';
+        hideNotice();
+
+        const isForward = (direction === 'forward');
+        const targetVideo = isForward ? VIDEO_MAP[branch].forward : VIDEO_MAP[branch].reverse;
+        const currentVideo = state.currentVisibleVideo;
+
+        // Visual layout updates
+        if (isForward) {
+          state.activeBranch = branch;
+          state.lastFocusedButton = buttons[branch];
+
+          // Forward UI collapse:
+          capsuleEl.classList.remove('is-active');
+          controllerEl.classList.add('is-selected');
+
+          // Mark chosen button
+          buttons[branch].classList.add('is-chosen');
+          buttons[branch].setAttribute('aria-label', 'Reset scene');
+
+          // Hide non-chosen buttons from ARIA/tabindex
+          Object.keys(buttons).forEach(function (k) {
+            if (k !== branch) {
+              buttons[k].setAttribute('aria-hidden', 'true');
+              buttons[k].tabIndex = -1;
+            }
+          });
+
+          // Staggered title hide around 12% of duration
+          setTimeout(function () {
+            if (currentToken === state.transitionToken) {
+              heroEl.classList.add('is-hidden');
+            }
+          }, 350);
+        } else {
+          // Reverse: simultaneous controller expand and video reverse
+          controllerEl.classList.remove('is-selected');
+          if (state.activeBranch && buttons[state.activeBranch]) {
+            buttons[state.activeBranch].classList.remove('is-chosen');
+            buttons[state.activeBranch].textContent = state.activeBranch.charAt(0).toUpperCase() + state.activeBranch.slice(1);
+            buttons[state.activeBranch].removeAttribute('aria-label');
+          }
+          // Restore ARIA attributes
+          Object.keys(buttons).forEach(function (k) {
+            buttons[k].removeAttribute('aria-hidden');
+            buttons[k].tabIndex = 0;
+          });
+        }
+
+        try {
+          // 4. Rewind target video to 0
+          targetVideo.currentTime = 0;
+          await waitForSeek(targetVideo);
+
+          if (currentToken !== state.transitionToken) return;
+
+          // 6. Register first frame listener before play()
+          const framePromise = waitForFirstFrame(targetVideo, currentToken);
+
+          // Start playing
+          const playPromise = targetVideo.play();
+          if (playPromise !== undefined) {
+            await playPromise;
+          }
+
+          // Await verified decoded frame
+          await framePromise;
+
+          if (currentToken !== state.transitionToken) return;
+
+          // 15. Atomically switch visibility
+          targetVideo.classList.add('is-visible');
+          if (currentVideo && currentVideo !== targetVideo) {
+            currentVideo.classList.remove('is-visible');
+            currentVideo.pause();
+          }
+          state.currentVisibleVideo = targetVideo;
+          state.playback = 'playing';
+
+          // 17. Monitor terminal frame
+          monitorTerminalFrame(targetVideo, branch, direction, currentToken, function () {
+            if (currentToken !== state.transitionToken) return;
+
+            if (isForward) {
+              // Reached terminal frame of forward video
+              state.scene = branch;
+              state.playback = 'ready';
+              state.isLocked = false; // Reset button now actionable
+              buttons[branch].disabled = false;
+              buttons[branch].textContent = 'Reset';
+              buttons[branch].focus({ preventScroll: true });
+              announce(branch + ' selected. Press Reset to return to base.');
+            } else {
+              // Reached terminal frame of reverse video -> Base scene committed
+              state.scene = 'base';
+              state.activeBranch = null;
+              state.playback = 'ready';
+              state.isLocked = false;
+              setControlsDisabled(false);
+
+              // Reveal title
+              heroEl.classList.remove('is-hidden');
+
+              // Restore focus to original button
+              if (state.lastFocusedButton) {
+                state.lastFocusedButton.focus({ preventScroll: true });
+                updateCapsule(state.lastFocusedButton);
+              }
+              announce('Base scene restored.');
+            }
+          });
+
+        } catch (err) {
+          console.error('[Playback Error]', err);
+          state.playback = 'error';
+          state.isLocked = false; // Allow retry
+
+          showNotice('Video transition failed.', true, function () {
+            executeTransition(branch, direction);
+          });
+          // Re-enable current control so user isn't permanently locked
+          if (isForward) {
+            buttons[branch].disabled = false;
+          } else {
+            setControlsDisabled(false);
+          }
+        }
+      }
+
+      // --- Initialize Base Scene at Frame 0 ---
+      async function initBaseScene() {
+        const baseVideo = VIDEO_MAP.clothing.forward; // video-1 is base
+        baseVideo.classList.add('is-base');
+        if (baseVideo.currentTime !== 0) {
+          baseVideo.currentTime = 0;
+          await waitForSeek(baseVideo);
+        }
+
+        baseVideo.classList.add('is-visible');
+        state.currentVisibleVideo = baseVideo;
+        state.scene = 'base';
+        state.playback = 'ready';
+        state.isLocked = false;
+        setControlsDisabled(false);
+      }
+
+      // --- Button Click Routing ---
+      function setupEvents() {
+        Object.keys(buttons).forEach(function (k) {
+          const btn = buttons[k];
+          btn.addEventListener('click', function () {
+            if (state.isLocked) return;
+
+            if (state.scene === 'base') {
+              // Forward transition to this branch
+              executeTransition(k, 'forward');
+            } else if (state.scene === k) {
+              // Reverse back to base
+              executeTransition(k, 'reverse');
+            }
+            // Branch to branch is strictly forbidden
+          });
+        });
+
+        // Visibility Change (tab switched)
+        document.addEventListener('visibilitychange', function () {
+          if (document.hidden) {
+            // When hidden, pause any playing video to prevent desync
+            if (state.currentVisibleVideo && !state.currentVisibleVideo.paused) {
+              state.currentVisibleVideo.pause();
+            }
+          }
+        });
+      }
+
+      // --- Bootstrap ---
+      function bootstrap() {
+        initCapsuleEvents();
+        setupEvents();
+        initBaseScene();
+      }
+
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bootstrap);
+      } else {
+        bootstrap();
+      }
+
+    })();
+  </script>
+</body>
+</html>
