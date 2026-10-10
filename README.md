@@ -4,7 +4,7 @@
 
 [![Status](https://img.shields.io/badge/Status-Hackathon--Ready-emerald.svg)](#)
 [![Qloo](https://img.shields.io/badge/Qloo-Taste%20Graph%20v2-blue.svg)](https://hackathon.api.qloo.com)
-[![Vercel](https://img.shields.io/badge/Deployed-Vercel-black.svg)](https://culturepilot-jimmyogb.vercel.app)
+[![Vercel](https://img.shields.io/badge/Deployed-Vercel-black.svg)](https://culturepilot-one.vercel.app)
 [![Node](https://img.shields.io/badge/Node.js-%3E%3D22.19-green.svg)](https://nodejs.org/)
 
 **CulturePilot** translates natural-language cultural discovery intents into structured, cross-domain cultural recommendations backed by authentic Qloo entity identifiers and mathematical affinity scores.
@@ -17,8 +17,9 @@ CulturePilot bridges this gap by grounding natural-language cultural intent in *
 
 ## Verified Project Links
 
-- **Production Live Demo:** [https://culturepilot-jimmyogb.vercel.app](https://culturepilot-jimmyogb.vercel.app)
+- **Production Live Demo:** [https://culturepilot-one.vercel.app](https://culturepilot-one.vercel.app)
 - **GitHub Repository:** [https://github.com/JimmyOgb/CulturePilot](https://github.com/JimmyOgb/CulturePilot)
+- **Health Check:** [https://culturepilot-one.vercel.app/api/health](https://culturepilot-one.vercel.app/api/health)
 - **Local Endpoint:** `http://localhost:3001`
 
 ---

@@ -211,3 +211,8 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 }
+
+const defaultServerInstance = createServer();
+export default function handler(req, res) {
+  defaultServerInstance.emit('request', req, res);
+}
