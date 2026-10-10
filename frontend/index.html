@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LTX — The world model</title>
+  <title>CulturePilot — Cinematic Cultural Discovery (LTX Powered)</title>
 
   <!-- Google Fonts: Manrope -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1360,8 +1360,8 @@
           <path d="M0 0h10v24h18v8H0V0zm34 8h-8V0h26v8h-8v24h-10V8zm25 0h-9L60 0h12l-7 13 8 19h-12l-4-10-3 6v4h-9V0h9v17l5-9z"/>
         </svg>
         <div class="header-tagline">
-          <span>LTX-2.5 is here</span>
-          <span class="sub">Smarter. Faster</span>
+          <span>CulturePilot × LTX</span>
+          <span class="sub">Cultural Taste Discovery</span>
         </div>
       </a>
 
@@ -1435,19 +1435,26 @@
        * @returns {Promise<Object>}
        */
       async query(payload) {
+        const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        const timeoutId = controller ? setTimeout(function () { controller.abort(); }, 25000) : null;
         try {
           const response = await fetch(this.endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(payload),
+            ...(controller ? { signal: controller.signal } : {})
           });
+          if (timeoutId) clearTimeout(timeoutId);
           if (!response.ok) {
             throw new Error('CulturePilot API error: ' + response.statusText);
           }
           return await response.json();
         } catch (err) {
-          console.warn('[CulturePilotAPI] Backend unreachable or not yet configured:', err.message);
-          return { status: 'offline', message: err.message };
+          if (timeoutId) clearTimeout(timeoutId);
+          const isTimeout = err.name === 'AbortError';
+          const msg = isTimeout ? 'Cultural discovery request timed out after 25s. The cultural graph may be busy; please retry.' : err.message;
+          console.warn('[CulturePilotAPI] Backend query notice:', msg);
+          return { status: isTimeout ? 'error' : 'offline', message: msg };
         }
       }
     };
@@ -1576,17 +1583,29 @@
       }
 
       function renderEmpty(data) {
-        setBadge('empty');
-        body.innerHTML = `
+        setBadge(data?.status || 'empty');
+        const loc = data?.discovery_context?.location;
+        const warnings = data?.warnings || [];
+        let html = '';
+        if (warnings.length > 0) {
+          html += `
+            <div class="discovery-warning-banner" role="status">
+              <span class="warning-icon">ℹ️</span>
+              <div class="warning-text">${warnings.map(function (w) { return `<p>${escapeHtml(w)}</p>`; }).join('')}</div>
+            </div>
+          `;
+        }
+        html += `
           <div class="discovery-state discovery-state-empty">
             <div class="state-icon">🏛️</div>
             <h3 class="state-title">No Cataloged Matches</h3>
             <p class="state-desc">
-              Qloo has no verified venues or entities matching this specific query in ${escapeHtml(data?.discovery_context?.location || 'this location')}.
+              Qloo has no verified venues or entities matching this specific query in ${escapeHtml(loc || 'this location')}.
               CulturePilot honestly reports zero matches rather than inventing venues or substituting unrelated athletic or commercial facilities.
             </p>
           </div>
         `;
+        body.innerHTML = html;
       }
 
       function renderResults(data) {
@@ -1744,7 +1763,7 @@
             renderError(data?.message || 'Could not fetch cultural recommendations.', queryStr);
           } else if (data.status === 'needs_input') {
             renderNeedsInput(data.warnings?.[0] || 'Please provide more details in your request.');
-          } else if (data.status === 'empty' && (!data.results || data.results.length === 0)) {
+          } else if ((data.status === 'empty' || data.status === 'degraded') && (!data.results || data.results.length === 0)) {
             renderEmpty(data);
           } else {
             renderResults(data);

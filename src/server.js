@@ -97,6 +97,8 @@ export function handleHealthRequest(req, res) {
   const configStatus = validateConfig();
   sendJsonResponse(res, 200, {
     status: configStatus.valid ? 'ok' : 'degraded',
+    service: 'CulturePilot Cultural Intelligence API',
+    mode: 'configuration_verified',
     qloo_configured: configStatus.configured.hasKey,
     base_url: configStatus.configured.baseUrl,
     uptime_seconds: process.uptime(),

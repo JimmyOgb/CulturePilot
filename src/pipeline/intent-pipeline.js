@@ -155,7 +155,7 @@ export class CulturePilotPipeline {
   _extractCulturalSignals(text) {
     let location = null;
     const locationPatterns = [
-      /\b(?:in|around|near|visit|visiting|trip to|weekend in)\s+([A-Z][a-zA-Z\s]{1,24}?)(?=[,\.\b]|\s+with|\s+and|\s+for|$)/i,
+      /\b(?:in|around|near|visit|visiting|trip to|weekend in)\s+([A-Za-z0-9][a-zA-Z0-9\s]{1,30}?)(?=[,\.\b]|\s+with|\s+and|\s+for|$)/i,
       /\b(?:Lagos|Abuja|Accra|Nairobi|London|Paris|Tokyo|Berlin|New York|Rome|Lisbon|Amsterdam|Barcelona|Cape Town)\b/i
     ];
 
